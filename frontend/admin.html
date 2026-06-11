@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard — Student Grievance System</title>
+  <meta name="description" content="Admin panel to manage, review, and resolve student grievances with real-time statistics." />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>" />
+  <style>
+    /* Admin Login */
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .login-card {
+      max-width: 440px;
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-xl);
+      padding: 3rem 2.5rem;
+      backdrop-filter: blur(30px);
+      text-align: center;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+    }
+
+    .login-icon {
+      width: 72px; height: 72px;
+      background: var(--gradient-main);
+      border-radius: var(--radius-xl);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+      margin: 0 auto 1.5rem;
+      box-shadow: var(--shadow-glow-violet);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .pass-wrapper { position: relative; }
+    .pass-toggle {
+      position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 1.1rem;
+      transition: var(--transition);
+    }
+    .pass-toggle:hover { color: var(--violet-light); }
+
+    /* Admin Dashboard */
+    .admin-dashboard { display: none; }
+    .admin-dashboard.active { display: block; }
+
+    /* Admin top bar */
+    .admin-topbar {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-glass);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .admin-topbar h2 { font-size: 1.1rem; color: var(--text-primary); }
+
+    /* Filter bar */
+    .filter-bar {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+
+    .filter-btn {
+      padding: 0.45rem 1rem;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-glass);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .filter-btn.active, .filter-btn:hover {
+      background: rgba(124,58,237,0.15);
+      border-color: var(--violet);
+      color: var(--violet-light);
+    }
+
+    /* Grievance table row actions */
+    .row-actions { display: flex; gap: 0.5rem; align-items: center; }
+
+    /* Detail modal */
+    .modal-field label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .modal-field p { font-size: 0.9rem; color: var(--text-primary); margin-top: 2px; font-weight: 500; }
+    .modal-field { margin-bottom: 1rem; }
+
+    .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.5rem; }
+    @media (max-width: 480px) { .modal-grid { grid-template-columns: 1fr; } }
+
+    /* Chart bars */
+    .chart-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-xl);
+      padding: 1.75rem;
+      backdrop-filter: blur(20px);
+    }
+
+    .chart-title { font-size: 0.9rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1.5rem; }
+
+    .bar-chart { display: flex; gap: 1rem; align-items: flex-end; height: 140px; }
+    .bar-item { display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; justify-content: flex-end; gap: 0.4rem; }
+    .bar { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.8s cubic-bezier(0.34,1.56,0.64,1); min-height: 4px; }
+    .bar-value { font-size: 0.8rem; font-weight: 700; color: var(--text-primary); }
+    .bar-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-align: center; }
+
+    /* Category breakdown */
+    .cat-list { list-style: none; }
+    .cat-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .cat-list li:last-child { border: none; }
+    .cat-bar-bg { flex: 1; height: 6px; background: var(--border-glass); border-radius: 3px; overflow: hidden; }
+    .cat-bar-fill { height: 100%; border-radius: 3px; background: var(--gradient-main); transition: width 0.8s ease; }
+    .cat-count { font-size: 0.8rem; font-weight: 700; color: var(--text-primary); min-width: 20px; text-align: right; }
+
+    /* Empty state for table */
+    .table-empty { text-align: center; padding: 3rem; color: var(--text-muted); }
+    .table-empty .empty-icon { font-size: 3rem; margin-bottom: 0.75rem; opacity: 0.5; }
+
+    /* Status select in modal */
+    .status-select-row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+    .status-select-row select { flex: 1; }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+    }
+    .page-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border-glass);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: var(--transition);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .page-btn:hover, .page-btn.active {
+      background: var(--gradient-main);
+      border-color: transparent;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- LOGIN PAGE -->
+  <div id="loginPage">
+    <nav class="navbar">
+      <a href="index.html" class="nav-logo">
+        <div class="nav-logo-icon">🎓</div>
+        <div class="nav-logo-text"><span>SGS</span> Portal</div>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="submit.html">Submit</a></li>
+        <li><a href="track.html">Track</a></li>
+      </ul>
+    </nav>
+    <div class="login-wrap" style="padding-top: 80px;">
+      <div class="login-card">
+        <div class="login-icon">⚙️</div>
+        <h2 style="margin-bottom: 0.5rem;">Admin Login</h2>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem;">Enter your admin credentials to access the dashboard.</p>
+
+        <div class="form-group" style="text-align: left;">
+          <label class="form-label" for="adminUser">Username</label>
+          <input type="text" id="adminUser" class="form-control" placeholder="admin" value="admin" readonly />
+        </div>
+
+        <div class="form-group" style="text-align: left;">
+          <label class="form-label" for="adminPass">Password</label>
+          <div class="pass-wrapper">
+            <input type="password" id="adminPass" class="form-control" placeholder="Enter password" />
+            <button class="pass-toggle" type="button" id="passToggle" onclick="togglePass()">👁️</button>
+          </div>
+          <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 6px;">Demo password: <strong style="color: var(--amber);">admin123</strong></p>
+        </div>
+
+        <button class="btn btn-primary" style="width:100%; margin-top: 0.5rem;" id="loginBtn" onclick="attemptLogin()">
+          🔐 Login to Dashboard
+        </button>
+
+        <div class="divider"></div>
+
+        <p style="font-size: 0.8rem; color: var(--text-muted);">
+          Are you a student? <a href="submit.html">Submit a Grievance</a> or <a href="track.html">Track Status</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN DASHBOARD -->
+  <div id="adminDashboard" class="admin-dashboard">
+
+    <!-- Top Bar -->
+    <div class="admin-topbar">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <a href="index.html" style="font-size: 1.5rem; text-decoration:none;">🎓</a>
+        <div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em;">Admin Panel</div>
+          <h2>Student Grievance System</h2>
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <div style="font-size: 0.85rem; color: var(--text-secondary);">👤 Administrator</div>
+        <button class="btn btn-sm btn-secondary" onclick="logout()">🚪 Logout</button>
+      </div>
+    </div>
+
+    <div style="padding: 2rem; max-width: 1400px; margin: 0 auto;">
+
+      <!-- STATS -->
+      <div class="grid-4" id="adminStats" style="margin-bottom: 2rem;">
+        <!-- Filled by JS -->
+      </div>
+
+      <!-- CHARTS ROW -->
+      <div class="grid-2" style="margin-bottom: 2rem;" id="chartsRow">
+        <!-- Filled by JS -->
+      </div>
+
+      <!-- GRIEVANCES TABLE -->
+      <div style="margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="font-size: 1.1rem;">📋 All Grievances</h3>
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="tableSearch" class="form-control" placeholder="Search name, ID, department..." style="min-width: 260px;" oninput="filterTable()" />
+          </div>
+          <button class="btn btn-sm btn-secondary" onclick="refreshTable()">🔄 Refresh</button>
+        </div>
+      </div>
+
+      <!-- Filter Buttons -->
+      <div class="filter-bar" id="filterBar">
+        <button class="filter-btn active" data-filter="all" onclick="setFilter(this, 'all')">All</button>
+        <button class="filter-btn" data-filter="pending" onclick="setFilter(this, 'pending')">⏳ Pending</button>
+        <button class="filter-btn" data-filter="review" onclick="setFilter(this, 'review')">🔍 Under Review</button>
+        <button class="filter-btn" data-filter="resolved" onclick="setFilter(this, 'resolved')">✅ Resolved</button>
+        <button class="filter-btn" data-filter="rejected" onclick="setFilter(this, 'rejected')">❌ Rejected</button>
+        <button class="filter-btn" data-filter="high" onclick="setFilter(this, 'high')">🔴 High Priority</button>
+      </div>
+
+      <div class="table-wrapper" id="grievancesTable">
+        <!-- Filled by JS -->
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+
+  <!-- DETAIL MODAL -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">Grievance Details</h3>
+        <button class="modal-close" onclick="closeModal('detailModal')">✕</button>
+      </div>
+      <div id="modalBody"><!-- Filled by JS --></div>
+    </div>
+  </div>
+
+  <!-- TOAST Container -->
+  <div class="toast-container"></div>
+
+  <script src="app.js?v=2"></script>
+  <script>
+    let currentFilter = 'all';
+    let currentSearchTerm = '';
+    let currentPage = 1;
+    const PER_PAGE = 8;
+    let currentGrievanceId = null;
+
+    // ---- LOGIN ----
+    document.getElementById('adminPass').addEventListener('keydown', e => {
+      if (e.key === 'Enter') attemptLogin();
+    });
+
+    function togglePass() {
+      const p = document.getElementById('adminPass');
+      p.type = p.type === 'password' ? 'text' : 'password';
+    }
+
+    function attemptLogin() {
+      const pass = document.getElementById('adminPass').value;
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true;
+      btn.textContent = 'Logging in...';
+
+      setTimeout(async () => {
+        if (await adminLogin(pass)) {
+          showLoginToast('success', 'Login Successful', 'Welcome, Administrator!');
+          setTimeout(async () => {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('adminDashboard').classList.add('active');
+            await initDashboard();
+          }, 800);
+        } else {
+          showLoginToast('error', 'Wrong Password', 'Please try again. Hint: admin123');
+          document.getElementById('adminPass').style.borderColor = 'var(--rose)';
+          btn.disabled = false;
+          btn.textContent = '🔐 Login to Dashboard';
+        }
+      }, 600);
+    }
+
+    function showLoginToast(type, title, msg) {
+      // mini toast without full app.js?v=2 context (called before dashboard)
+      const toastContainer = document.querySelector('.toast-container');
+      const toast = document.createElement('div');
+      const icons = { success: '✅', error: '❌' };
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `<span class="toast-icon">${icons[type]}</span><div class="toast-content"><div class="toast-title">${title}</div><div class="toast-message">${msg}</div></div>`;
+      toastContainer.appendChild(toast);
+      setTimeout(() => { toast.classList.add('removing'); setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+
+    function logout() {
+      adminLogout();
+      location.reload();
+    }
+
+    // Auto-login if session exists
+    document.addEventListener('DOMContentLoaded', async () => {
+      await seedDemoData();
+      if (isAdminLoggedIn()) {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('adminDashboard').classList.add('active');
+        await initDashboard();
+      }
+    });
+
+    // ---- DASHBOARD ----
+    async function initDashboard() {
+      await renderStats();
+      await renderCharts();
+      await renderTable();
+    }
+
+    async function renderStats() {
+      const s = await getStats();
+      const items = [
+        { value: s.total,    label: 'Total Grievances', icon: '📋', color: '#7c3aed', bg: 'rgba(124,58,237,0.12)' },
+        { value: s.pending,  label: 'Pending',          icon: '⏳', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+        { value: s.review,   label: 'Under Review',     icon: '🔍', color: '#06b6d4', bg: 'rgba(6,182,212,0.12)' },
+        { value: s.resolved, label: 'Resolved',         icon: '✅', color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+      ];
+      document.getElementById('adminStats').innerHTML = items.map(s => `
+        <div class="stat-card">
+          <div class="stat-icon" style="background:${s.bg}; font-size:1.5rem;">${s.icon}</div>
+          <div class="stat-info">
+            <div class="stat-value" style="color:${s.color};">${s.value}</div>
+            <div class="stat-label">${s.label}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function renderCharts() {
+      const all = await getGrievances();
+      const s = await getStats();
+      const total = s.total || 1;
+
+      // Status bar chart
+      const barData = [
+        { label: 'Pending', value: s.pending, color: '#f59e0b' },
+        { label: 'Review',  value: s.review,  color: '#06b6d4' },
+        { label: 'Resolved',value: s.resolved, color: '#10b981' },
+        { label: 'Rejected',value: s.rejected, color: '#f43f5e' },
+      ];
+      const maxVal = Math.max(...barData.map(d => d.value), 1);
+
+      // Category breakdown
+      const catCounts = {};
+      const catLabels = { academic:'Academic', hostel:'Hostel', fee:'Fee', infrastructure:'Infra', faculty:'Faculty', sports:'Sports', library:'Library', other:'Other' };
+      all.forEach(g => { catCounts[g.category] = (catCounts[g.category] || 0) + 1; });
+      const catData = Object.entries(catCounts).sort((a,b) => b[1]-a[1]);
+
+      document.getElementById('chartsRow').innerHTML = `
+        <div class="chart-container">
+          <div class="chart-title">📊 Status Distribution</div>
+          <div class="bar-chart">
+            ${barData.map(d => `
+              <div class="bar-item">
+                <div class="bar-value">${d.value}</div>
+                <div class="bar" style="height:${(d.value/maxVal)*100}%; background:${d.color}; min-height: ${d.value > 0 ? '8px' : '4px'};"></div>
+                <div class="bar-label">${d.label}</div>
+              </div>
+            `).join('')}
+          </div>
+          <div style="margin-top:1rem;">
+            <div class="progress-bar"><div class="progress-fill" style="width:${(s.resolved/total)*100}%"></div></div>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.35rem;">Resolution rate: ${total > 0 ? Math.round((s.resolved/total)*100) : 0}%</div>
+          </div>
+        </div>
+
+        <div class="chart-container">
+          <div class="chart-title">📂 Category Breakdown</div>
+          ${catData.length === 0 ? '<p style="color:var(--text-muted); font-size:0.875rem;">No data yet.</p>' : ''}
+          <ul class="cat-list">
+            ${catData.map(([cat, count]) => `
+              <li>
+                <span style="font-size:1.1rem;">${categoryIcon(cat)}</span>
+                <span style="font-size:0.85rem; font-weight:600; flex:1;">${catLabels[cat] || cat}</span>
+                <div class="cat-bar-bg">
+                  <div class="cat-bar-fill" style="width:${(count/total)*100}%"></div>
+                </div>
+                <span class="cat-count">${count}</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      `;
+    }
+
+    async function getFilteredGrievances() {
+      let all = await getGrievances();
+      // Filter by status
+      if (currentFilter === 'high') {
+        all = all.filter(g => g.priority === 'high');
+      } else if (currentFilter !== 'all') {
+        all = all.filter(g => g.status === currentFilter);
+      }
+      // Search
+      if (currentSearchTerm) {
+        const term = currentSearchTerm.toLowerCase();
+        all = all.filter(g =>
+          g.id.toLowerCase().includes(term) ||
+          g.name.toLowerCase().includes(term) ||
+          g.department.toLowerCase().includes(term) ||
+          g.subject.toLowerCase().includes(term) ||
+          g.enrollment.toLowerCase().includes(term)
+        );
+      }
+      return all;
+    }
+
+    async function renderTable() {
+      const filtered = await getFilteredGrievances();
+      const total = filtered.length;
+      const totalPages = Math.ceil(total / PER_PAGE);
+      const start = (currentPage - 1) * PER_PAGE;
+      const paged = filtered.slice(start, start + PER_PAGE);
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>Grievance ID</th>
+              <th>Student</th>
+              <th>Department</th>
+              <th>Category</th>
+              <th>Subject</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      if (paged.length === 0) {
+        html += `<tr><td colspan="9"><div class="table-empty"><div class="empty-icon">📭</div><p>No grievances found.</p></div></td></tr>`;
+      } else {
+        paged.forEach(g => {
+          const catLabels = { academic:'Academic', hostel:'Hostel', fee:'Fee', infrastructure:'Infra', faculty:'Faculty', sports:'Sports', library:'Library', other:'Other' };
+          html += `
+            <tr>
+              <td><span style="font-family:'Outfit',monospace; font-weight:700; font-size:0.9rem; color:var(--violet-light);">${g.id}</span></td>
+              <td>
+                <div style="font-weight:600; font-size:0.9rem;">${g.name}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">${g.enrollment}</div>
+              </td>
+              <td><span style="font-size:0.85rem;">${g.department}</span></td>
+              <td><span style="font-size:0.875rem;">${categoryIcon(g.category)} ${catLabels[g.category] || g.category}</span></td>
+              <td><span style="font-size:0.85rem; max-width:180px; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${g.subject}</span></td>
+              <td>${priorityBadge(g.priority)}</td>
+              <td>${statusBadge(g.status)}</td>
+              <td><span style="font-size:0.8rem; color:var(--text-muted);">${formatDateShort(g.submittedAt)}</span></td>
+              <td>
+                <div class="row-actions">
+                  <button class="btn btn-sm btn-outline" onclick="viewGrievance('${g.id}')" title="View Details">👁️</button>
+                  <button class="btn btn-sm btn-secondary" onclick="openUpdateModal('${g.id}')" title="Update Status">✏️</button>
+                  <button class="btn btn-sm" style="background:rgba(244,63,94,0.12); color:var(--rose); border:1px solid rgba(244,63,94,0.3);" onclick="confirmDelete('${g.id}')" title="Delete">🗑️</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        });
+      }
+
+      html += `</tbody></table>`;
+      document.getElementById('grievancesTable').innerHTML = html;
+
+      // Pagination
+      let paginationHtml = '';
+      if (totalPages > 1) {
+        if (currentPage > 1) paginationHtml += `<button class="page-btn" onclick="changePage(${currentPage-1})">‹</button>`;
+        for (let i = 1; i <= totalPages; i++) {
+          paginationHtml += `<button class="page-btn ${i===currentPage?'active':''}" onclick="changePage(${i})">${i}</button>`;
+        }
+        if (currentPage < totalPages) paginationHtml += `<button class="page-btn" onclick="changePage(${currentPage+1})">›</button>`;
+      }
+      document.getElementById('pagination').innerHTML = paginationHtml;
+    }
+
+    function changePage(p) { currentPage = p; renderTable(); }
+
+    function setFilter(btn, filter) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = filter;
+      currentPage = 1;
+      renderTable();
+    }
+
+    function filterTable() {
+      currentSearchTerm = document.getElementById('tableSearch').value;
+      currentPage = 1;
+      renderTable();
+    }
+
+    async function refreshTable() {
+      await renderStats();
+      await renderCharts();
+      await renderTable();
+      showToast('info', 'Refreshed', 'Data updated successfully.');
+    }
+
+    // ---- VIEW MODAL ----
+    async function viewGrievance(id) {
+      const g = await getGrievanceById(id);
+      if (!g) return;
+      const catLabels = { academic:'Academic', hostel:'Hostel', fee:'Fee / Finance', infrastructure:'Infrastructure', faculty:'Faculty', sports:'Sports', library:'Library', other:'Other' };
+
+      document.getElementById('modalTitle').textContent = `Grievance ${g.id}`;
+      document.getElementById('modalBody').innerHTML = `
+        <div style="margin-bottom:1rem;">${statusBadge(g.status)} ${priorityBadge(g.priority)}</div>
+
+        <div class="modal-grid">
+          <div class="modal-field"><label>Student Name</label><p>${g.name}</p></div>
+          <div class="modal-field"><label>Enrollment</label><p>${g.enrollment}</p></div>
+          <div class="modal-field"><label>Email</label><p>${g.email}</p></div>
+          <div class="modal-field"><label>Phone</label><p>${g.phone}</p></div>
+          <div class="modal-field"><label>Department</label><p>${g.department}</p></div>
+          <div class="modal-field"><label>Year</label><p>${g.year}</p></div>
+          <div class="modal-field"><label>Category</label><p>${categoryIcon(g.category)} ${catLabels[g.category]}</p></div>
+          <div class="modal-field"><label>Submitted</label><p>${formatDate(g.submittedAt)}</p></div>
+        </div>
+
+        <div class="modal-field"><label>Subject</label><p style="font-size:1rem; font-weight:600;">${g.subject}</p></div>
+        <div class="modal-field"><label>Description</label>
+          <div class="desc-box" style="background:rgba(255,255,255,0.03); border:1px solid var(--border-glass); border-radius:var(--radius-lg); padding:1rem; font-size:0.875rem; color:var(--text-secondary); line-height:1.8; white-space:pre-wrap; margin-top:4px;">${g.description}</div>
+        </div>
+
+        ${g.adminNote ? `
+          <div class="admin-note" style="background:rgba(6,182,212,0.08); border:1px solid rgba(6,182,212,0.25); border-radius:var(--radius-lg); padding:1rem; margin-top:1rem;">
+            <div>
+              <div style="font-size:0.75rem; font-weight:700; color:var(--cyan); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px;">Admin Note</div>
+              <div style="font-size:0.875rem; color:var(--text-secondary);">${g.adminNote}</div>
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="divider"></div>
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+          <button class="btn btn-primary btn-sm" onclick="closeModal('detailModal'); openUpdateModal('${g.id}')">✏️ Update Status</button>
+          <button class="btn btn-secondary btn-sm" onclick="closeModal('detailModal')">Close</button>
+        </div>
+      `;
+
+      openModal('detailModal');
+    }
+
+    // ---- UPDATE MODAL ----
+    async function openUpdateModal(id) {
+      currentGrievanceId = id;
+      const g = await getGrievanceById(id);
+      if (!g) return;
+
+      document.getElementById('modalTitle').textContent = `Update — ${g.id}`;
+      document.getElementById('modalBody').innerHTML = `
+        <div style="margin-bottom:1.5rem;">
+          <p style="font-size:0.875rem; color:var(--text-secondary);">Student: <strong style="color:var(--text-primary);">${g.name}</strong> &nbsp;|&nbsp; ${g.subject}</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Update Status</label>
+          <div class="status-select-row">
+            <select id="updateStatus" class="form-control">
+              <option value="pending"  ${g.status==='pending'?'selected':-
+              ''}>⏳ Pending</option>
+              <option value="review"   ${g.status==='review'?'selected':''}>🔍 Under Review</option>
+              <option value="resolved" ${g.status==='resolved'?'selected':''}>✅ Resolved</option>
+              <option value="rejected" ${g.status==='rejected'?'selected':''}>❌ Rejected</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="adminNoteInput">Admin Note / Remark</label>
+          <textarea id="adminNoteInput" class="form-control" rows="4" placeholder="Add a note to inform the student about the action taken...">${g.adminNote || ''}</textarea>
+        </div>
+
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-top:1rem;">
+          <button class="btn btn-primary" onclick="saveUpdate()">💾 Save Changes</button>
+          <button class="btn btn-secondary" onclick="closeModal('detailModal')">Cancel</button>
+        </div>
+      `;
+
+      openModal('detailModal');
+    }
+
+    async function saveUpdate() {
+      const status = document.getElementById('updateStatus').value;
+      const note = document.getElementById('adminNoteInput').value.trim();
+
+      await updateGrievance(currentGrievanceId, { status, adminNote: note });
+      closeModal('detailModal');
+      await renderStats();
+      await renderCharts();
+      await renderTable();
+      showToast('success', 'Updated!', `Grievance ${currentGrievanceId} has been updated.`);
+    }
+
+    // ---- DELETE ----
+    async function confirmDelete(id) {
+      if (confirm(`Are you sure you want to delete grievance ${id}? This cannot be undone.`)) {
+        await deleteGrievance(id);
+        await renderStats();
+        await renderCharts();
+        await renderTable();
+        showToast('success', 'Deleted', `Grievance ${id} has been removed.`);
+      }
+    }
+
+    // ---- MODAL HELPERS ----
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('detailModal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal('detailModal');
+    });
+
+    // Keyboard shortcut - ESC to close
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeModal('detailModal');
+    });
+  </script>
+</body>
+</html>

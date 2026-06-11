@@ -1,0 +1,22 @@
+# .gitignore - Files to NOT upload to GitHub
+
+# Environment variables (SENSITIVE!)
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# SQLite old database
+*.db
+
+# VS Code
+.vscode/
+
+# Node modules (if any)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db

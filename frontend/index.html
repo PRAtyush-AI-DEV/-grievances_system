@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Grievance System — Resolve Issues, Build Better</title>
+  <meta name="description" content="A modern, transparent platform for students to raise academic and non-academic grievances with ease. Track status in real-time." />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>" />
+  <style>
+    /* ---- Index-specific styles ---- */
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-xl);
+      padding: 2rem;
+      transition: var(--transition);
+      backdrop-filter: blur(20px);
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; right: 0;
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: var(--accent-color, rgba(124,58,237,0.08));
+      filter: blur(20px);
+      transition: var(--transition);
+    }
+    .feature-card:hover { transform: translateY(-6px); border-color: var(--border-glass-hover); box-shadow: var(--shadow-card); }
+    .feature-card:hover::after { width: 120px; height: 120px; }
+
+    .feature-icon {
+      width: 56px; height: 56px;
+      border-radius: var(--radius-lg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .feature-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .feature-desc { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.7; }
+
+    /* Quick Actions */
+    .action-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; }
+
+    .action-card {
+      background: var(--gradient-card);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-xl);
+      padding: 2rem;
+      text-align: center;
+      transition: var(--transition);
+      backdrop-filter: blur(20px);
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+    }
+    .action-card:hover { transform: translateY(-6px) scale(1.02); border-color: var(--border-glass-hover); box-shadow: var(--shadow-card), var(--shadow-glow-violet); }
+
+    .action-card-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+    .action-card-title { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
+    .action-card-desc { font-size: 0.875rem; color: var(--text-secondary); }
+
+    /* Stats Row */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem; }
+
+    .mini-stat {
+      text-align: center;
+      padding: 1.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-xl);
+      backdrop-filter: blur(20px);
+    }
+    .mini-stat-value {
+      font-size: 2.2rem;
+      font-weight: 900;
+      font-family: 'Outfit', sans-serif;
+      background: var(--gradient-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .mini-stat-label { color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.25rem; }
+
+    /* How it works */
+    .how-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; position: relative; }
+
+    .how-step {
+      text-align: center;
+      padding: 2rem 1.5rem;
+      position: relative;
+    }
+
+    .step-number {
+      width: 48px; height: 48px;
+      background: var(--gradient-main);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; font-weight: 800;
+      margin: 0 auto 1.25rem;
+      box-shadow: var(--shadow-glow-violet);
+    }
+
+    .how-step h4 { font-size: 1rem; margin-bottom: 0.5rem; }
+    .how-step p { color: var(--text-secondary); font-size: 0.875rem; line-height: 1.6; }
+
+    /* Announcement banner */
+    .announcement {
+      background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(6,182,212,0.1));
+      border: 1px solid rgba(124,58,237,0.3);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .announcement-icon { font-size: 1.5rem; }
+    .announcement-text { flex: 1; font-size: 0.9rem; color: var(--text-secondary); }
+    .announcement-text strong { color: var(--violet-light); }
+
+    /* Hero floating cards */
+    .hero-floating {
+      position: absolute;
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      padding: 0.75rem 1.25rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .hero-floating .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .hf-left { left: 5%; top: 35%; animation: float 4s ease-in-out infinite; }
+    .hf-right { right: 5%; top: 40%; animation: float 4s ease-in-out infinite 1.5s; }
+
+    @media (max-width: 900px) { .hero-floating { display: none; } }
+  </style>
+</head>
+<body>
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <a href="index.html" class="nav-logo">
+      <div class="nav-logo-icon">🎓</div>
+      <div class="nav-logo-text"><span>SGS</span> Portal</div>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html" class="active">Home</a></li>
+      <li><a href="submit.html">Submit</a></li>
+      <li><a href="track.html">Track</a></li>
+      <li><a href="admin.html" class="nav-btn">Admin Panel</a></li>
+    </ul>
+    <div class="nav-hamburger" id="hamburger">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <div class="page-wrapper">
+    <!-- HERO -->
+    <section class="hero">
+      <!-- Floating cards -->
+      <div class="hero-floating hf-left">
+        <div class="dot" style="background: var(--emerald); animation: pulse 2s infinite;"></div>
+        ✅ Grievance Resolved
+      </div>
+      <div class="hero-floating hf-right">
+        <div class="dot" style="background: var(--amber); animation: pulse 2s infinite 0.5s;"></div>
+        🔍 Under Review
+      </div>
+
+      <div style="position: relative; z-index: 2;">
+        <div class="hero-badge">
+          <span class="dot"></span>
+          Student Grievance System — Your Voice Matters
+        </div>
+        <h1 class="hero-title">
+          Raise Your Issues.<br />
+          <span class="gradient-text">Get Them Resolved.</span>
+        </h1>
+        <p class="hero-subtitle">
+          A transparent, fast and fair platform for students to report grievances — academic, hostel, fee-related and more. Track every step until resolution.
+        </p>
+        <div class="hero-actions" style="display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap;">
+          <a href="student-login.html" class="btn btn-primary" style="padding: 1.25rem 2.5rem; font-size: 1.2rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: 240px; text-decoration: none;">
+            <span style="font-size: 2.2rem;">🎓</span>
+            <span style="font-weight: 700;">Student Portal</span>
+            <span style="font-size: 0.85rem; font-weight: normal; opacity: 0.9;">Login & View Dashboard</span>
+          </a>
+          <a href="admin.html" class="btn btn-secondary" style="padding: 1.25rem 2.5rem; font-size: 1.2rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; width: 240px; text-decoration: none;">
+            <span style="font-size: 2.2rem;">👨‍💼</span>
+            <span style="font-weight: 700;">Admin Portal</span>
+            <span style="font-size: 0.85rem; font-weight: normal; opacity: 0.9;">Login & Manage Issues</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIVE STATS -->
+    <section class="section" style="padding-top: 3rem; padding-bottom: 3rem; background: rgba(124,58,237,0.04); border-top: 1px solid var(--border-glass); border-bottom: 1px solid var(--border-glass);">
+      <div class="container">
+        <div class="stats-row" id="statsRow">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- QUICK ACTIONS -->
+    <section class="section" id="actions">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-badge">⚡ Quick Access</div>
+          <h2 class="section-title">What Would You Like To Do?</h2>
+          <p class="section-subtitle">Choose an action below to get started quickly.</p>
+        </div>
+        <div class="action-cards scroll-reveal">
+          <a href="submit.html" class="action-card" id="action-submit">
+            <span class="action-card-icon">📝</span>
+            <div class="action-card-title">Submit a Grievance</div>
+            <div class="action-card-desc">File a new complaint or request. Takes less than 3 minutes.</div>
+          </a>
+          <a href="track.html" class="action-card" id="action-track">
+            <span class="action-card-icon">🔍</span>
+            <div class="action-card-title">Track Your Status</div>
+            <div class="action-card-desc">Enter your Grievance ID to see real-time status and updates.</div>
+          </a>
+          <a href="admin.html" class="action-card" id="action-admin">
+            <span class="action-card-icon">⚙️</span>
+            <div class="action-card-title">Admin Dashboard</div>
+            <div class="action-card-desc">Admins can review, update and resolve submitted grievances.</div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="section" id="features" style="background: rgba(6,11,24,0.5);">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-badge">✨ Features</div>
+          <h2 class="section-title">Why Use Our Portal?</h2>
+          <p class="section-subtitle">Built with transparency and efficiency at its core.</p>
+        </div>
+        <div class="features-grid">
+          <div class="feature-card scroll-reveal" style="--accent-color: rgba(124,58,237,0.1);">
+            <div class="feature-icon" style="background: rgba(124,58,237,0.15);">🔒</div>
+            <div class="feature-title">Confidential & Secure</div>
+            <div class="feature-desc">Your grievances are treated with complete confidentiality. Only authorized admins can access the details.</div>
+          </div>
+          <div class="feature-card scroll-reveal" style="--accent-color: rgba(6,182,212,0.1);">
+            <div class="feature-icon" style="background: rgba(6,182,212,0.15);">⚡</div>
+            <div class="feature-title">Fast Resolution</div>
+            <div class="feature-desc">Priority-based grievance handling ensures critical issues are addressed first and within SLA timelines.</div>
+          </div>
+          <div class="feature-card scroll-reveal" style="--accent-color: rgba(16,185,129,0.1);">
+            <div class="feature-icon" style="background: rgba(16,185,129,0.15);">📊</div>
+            <div class="feature-title">Real-time Tracking</div>
+            <div class="feature-desc">Get instant status updates. Know exactly where your grievance stands at every step of the process.</div>
+          </div>
+          <div class="feature-card scroll-reveal" style="--accent-color: rgba(245,158,11,0.1);">
+            <div class="feature-icon" style="background: rgba(245,158,11,0.15);">📂</div>
+            <div class="feature-title">Categorized Filing</div>
+            <div class="feature-desc">Academic, hostel, fee, infrastructure and more — structured categories for better routing.</div>
+          </div>
+          <div class="feature-card scroll-reveal" style="--accent-color: rgba(244,63,94,0.1);">
+            <div class="feature-icon" style="background: rgba(244,63,94,0.15);">🆔</div>
+            <div class="feature-title">Unique Grievance ID</div>
+            <div class="feature-desc">Every submission gets a unique ID that you can use to track, reference and follow up anytime.</div>
+          </div>
+          <div class="feature-card scroll-reveal" style="--accent-color: rgba(79,70,229,0.1);">
+            <div class="feature-icon" style="background: rgba(79,70,229,0.15);">👩‍💼</div>
+            <div class="feature-title">Admin Accountability</div>
+            <div class="feature-desc">Transparent admin notes and status updates ensure no grievance falls through the cracks.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="section" id="how">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-badge">📋 Process</div>
+          <h2 class="section-title">How It Works</h2>
+          <p class="section-subtitle">Simple 4-step process to get your grievance resolved.</p>
+        </div>
+        <div class="how-steps scroll-reveal">
+          <div class="how-step">
+            <div class="step-number">1</div>
+            <h4>Fill the Form</h4>
+            <p>Submit your details and describe your grievance clearly in our simple 3-step form.</p>
+          </div>
+          <div class="how-step">
+            <div class="step-number">2</div>
+            <h4>Get Grievance ID</h4>
+            <p>Instantly receive a unique Grievance ID to track your complaint anytime.</p>
+          </div>
+          <div class="how-step">
+            <div class="step-number">3</div>
+            <h4>Admin Reviews</h4>
+            <p>The admin team reviews, investigates and updates the status of your grievance.</p>
+          </div>
+          <div class="how-step">
+            <div class="step-number">4</div>
+            <h4>Get Resolution</h4>
+            <p>Track the resolution with admin notes and follow up if needed until fully resolved.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA BANNER -->
+    <section class="section" style="padding-top: 2rem; padding-bottom: 5rem;">
+      <div class="container">
+        <div class="card scroll-reveal" style="text-align: center; background: linear-gradient(135deg, rgba(124,58,237,0.12), rgba(6,182,212,0.06)); border-color: rgba(124,58,237,0.3); padding: 3.5rem 2rem;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">📢</div>
+          <h2 style="font-size: 2rem; margin-bottom: 0.75rem;">Have a Complaint?</h2>
+          <p style="color: var(--text-secondary); margin-bottom: 2rem; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.8;">
+            Don't stay silent. Your voice matters. Submit your grievance today and let the administration know about the issues affecting your student life.
+          </p>
+          <a href="submit.html" class="btn btn-primary" style="font-size: 1rem; padding: 1rem 2.5rem;" id="cta-submit-btn">
+            📝 Submit Grievance Now — It's Free
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="footer-logo">🎓 Student Grievance System</div>
+      <p style="margin-top: 0.5rem;">Empowering students with a transparent grievance resolution platform.</p>
+      <div class="divider" style="max-width: 400px; margin: 1.5rem auto;"></div>
+      <p>Built with HTML, CSS & JavaScript &nbsp;|&nbsp; College Project</p>
+    </footer>
+  </div>
+
+  <script src="app.js?v=2"></script>
+  <script>
+    // Load stats
+    document.addEventListener('DOMContentLoaded', async () => {
+      const stats = await getStats();
+      const statsRow = document.getElementById('statsRow');
+      const items = [
+        { value: stats.total,    label: 'Total Grievances',  icon: '📋', color: 'var(--violet-light)' },
+        { value: stats.pending,  label: 'Awaiting Review',   icon: '⏳', color: 'var(--amber)' },
+        { value: stats.review,   label: 'Under Review',      icon: '🔍', color: 'var(--cyan)' },
+        { value: stats.resolved, label: 'Resolved',          icon: '✅', color: 'var(--emerald)' },
+      ];
+      statsRow.innerHTML = items.map(s => `
+        <div class="mini-stat scroll-reveal">
+          <div style="font-size: 1.8rem; margin-bottom: 0.25rem;">${s.icon}</div>
+          <div class="mini-stat-value" data-target="${s.value}" style="background: none; -webkit-text-fill-color: ${s.color}; color: ${s.color};">0</div>
+          <div class="mini-stat-label">${s.label}</div>
+        </div>
+      `).join('');
+
+      // Animate counters
+      document.querySelectorAll('[data-target]').forEach(el => {
+        animateCounter(el, parseInt(el.dataset.target));
+      });
+    });
+  </script>
+</body>
+</html>

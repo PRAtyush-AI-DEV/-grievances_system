@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard - SGS Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-glass);
+    }
+    .student-welcome {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2rem;
+    }
+    .grievance-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      transition: all 0.3s ease;
+    }
+    .grievance-card:hover {
+      border-color: var(--border-glass-hover);
+      box-shadow: var(--shadow-card);
+      transform: translateY(-2px);
+    }
+    .g-id {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+    .g-subject {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    .g-meta {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 1rem;
+    }
+    .admin-note-box {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: rgba(124,58,237,0.05);
+      border-left: 3px solid var(--violet-light);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: rgba(255,255,255,0.02);
+      border-radius: var(--radius-lg);
+      border: 1px dashed var(--border-glass);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-brand" onclick="window.location.href='index.html'" style="cursor: pointer;">
+      <div class="nav-logo">🎓</div>
+      SGS Portal
+    </div>
+    <div class="nav-links">
+      <span style="color: var(--text-secondary); margin-right: 1rem;" id="navStudentName"></span>
+      <button class="btn btn-secondary" onclick="logoutStudent()" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container" style="padding-top: 120px;">
+    <div class="dashboard-header">
+      <div>
+        <h1 class="student-welcome">Welcome, <span class="gradient-text" id="welcomeName">Student</span>!</h1>
+        <p style="color: var(--text-secondary);">Manage and track your submitted grievances here.</p>
+      </div>
+      <a href="submit.html" class="btn btn-primary">➕ New Grievance</a>
+    </div>
+
+    <div id="grievancesList">
+      <!-- Loading state -->
+      <div style="text-align: center; padding: 3rem;">
+        <span class="spinner" style="width: 30px; height: 30px; border-width: 3px; display: inline-block;"></span>
+        <p style="margin-top: 1rem; color: var(--text-secondary);">Loading your grievances...</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+  <script src="app.js"></script>
+  <script>
+    const student = getLoggedInStudent();
+    if (!student) {
+      window.location.href = 'student-login.html';
+    } else {
+      document.getElementById('navStudentName').textContent = student.name;
+      document.getElementById('welcomeName').textContent = student.name.split(' ')[0];
+      loadMyGrievances();
+    }
+
+    async function loadMyGrievances() {
+      const list = await getStudentGrievances(student.id);
+      const container = document.getElementById('grievancesList');
+      
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;">📭</div>
+            <h3>No grievances found</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">You haven't submitted any grievances yet.</p>
+            <a href="submit.html" class="btn btn-primary">Submit Your First Grievance</a>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(g => `
+        <div class="grievance-card">
+          <div style="flex: 1;">
+            <div class="g-id">ID: ${g.id}</div>
+            <div class="g-subject">${g.subject}</div>
+            <div class="g-meta">
+              <span>📅 ${new Date(g.submittedAt).toLocaleDateString()}</span>
+              <span>🏷️ ${g.category.toUpperCase()}</span>
+            </div>
+            ${g.adminNote ? `
+              <div class="admin-note-box">
+                <strong>Admin Note:</strong><br/>
+                ${g.adminNote}
+              </div>
+            ` : ''}
+          </div>
+          <div>
+            ${statusBadge(g.status)}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function statusBadge(status) {
+      const badges = {
+        pending: '<span class="badge badge-pending">Pending</span>',
+        review: '<span class="badge badge-review">Under Review</span>',
+        resolved: '<span class="badge badge-resolved">Resolved</span>',
+        rejected: '<span class="badge badge-rejected">Rejected</span>'
+      };
+      return badges[status] || badges['pending'];
+    }
+  </script>
+</body>
+</html>

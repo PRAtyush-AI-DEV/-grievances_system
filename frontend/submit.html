@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Submit Grievance — Student Grievance System</title>
+  <meta name="description" content="Submit your student grievance in minutes. Fill our easy 3-step form and get a unique tracking ID instantly." />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>" />
+  <style>
+    .form-card {
+      max-width: 780px;
+      margin: 0 auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-xl);
+      padding: 2.5rem;
+      backdrop-filter: blur(20px);
+    }
+
+    .step-panel { display: none; }
+    .step-panel.active { display: block; animation: fadeInUp 0.4s ease; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+
+    .form-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-glass);
+    }
+
+    /* Success screen */
+    .success-screen {
+      text-align: center;
+      padding: 3rem 2rem;
+      display: none;
+    }
+    .success-screen.active { display: block; animation: fadeInUp 0.5s ease; }
+
+    .success-icon-wrap {
+      width: 100px; height: 100px;
+      background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.05));
+      border: 2px solid var(--emerald);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3rem;
+      margin: 0 auto 2rem;
+      animation: float 3s ease-in-out infinite;
+      box-shadow: 0 0 40px rgba(16,185,129,0.3);
+    }
+
+    .grievance-id-box {
+      background: rgba(124,58,237,0.12);
+      border: 1.5px solid rgba(124,58,237,0.4);
+      border-radius: var(--radius-xl);
+      padding: 1.5rem;
+      margin: 2rem auto;
+      max-width: 400px;
+    }
+    .grievance-id-label { font-size: 0.78rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+    .grievance-id-value {
+      font-size: 1.8rem;
+      font-weight: 900;
+      font-family: 'Outfit', sans-serif;
+      background: var(--gradient-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 0.04em;
+      margin: 0.5rem 0;
+    }
+    .grievance-id-copy {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--cyan);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0;
+      transition: var(--transition);
+    }
+    .grievance-id-copy:hover { color: var(--cyan-light); }
+
+    /* Review step */
+    .review-section { margin-bottom: 1.5rem; }
+    .review-section-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--violet-light);
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-glass);
+    }
+    .review-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    @media (max-width: 500px) { .review-grid { grid-template-columns: 1fr; } }
+    .review-item label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .review-item p { font-size: 0.9rem; color: var(--text-primary); font-weight: 500; margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-logo">
+      <div class="nav-logo-icon">🎓</div>
+      <div class="nav-logo-text"><span>SGS</span> Portal</div>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="submit.html" class="active">Submit</a></li>
+      <li><a href="track.html">Track</a></li>
+      <li><a href="admin.html" class="nav-btn">Admin Panel</a></li>
+    </ul>
+    <div class="nav-hamburger" id="hamburger">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <div class="page-wrapper">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div class="page-header-badge">📝 New Grievance</div>
+      <h1>Submit Your <span class="text-gradient">Grievance</span></h1>
+      <p>Fill in the details below. It takes less than 3 minutes. You'll receive a unique Grievance ID instantly.</p>
+    </div>
+
+    <!-- FORM SECTION -->
+    <section class="section" style="padding-top: 3rem;">
+      <div class="container">
+
+        <!-- Alert -->
+        <div class="alert alert-info" style="max-width: 780px; margin: 0 auto 1.5rem;">
+          <span>ℹ️</span>
+          <span>All submissions are <strong>confidential</strong>. Only authorized admins can view your grievance details. Please provide accurate information to speed up resolution.</span>
+        </div>
+
+        <!-- Step Indicator -->
+        <div class="steps-container" id="stepIndicator">
+          <div class="step-item">
+            <div class="step-dot active" id="dot-1" style="position:relative;">
+              <span>1</span>
+              <span class="step-label">Personal Info</span>
+            </div>
+          </div>
+          <div class="step-line" id="line-1"></div>
+          <div class="step-item">
+            <div class="step-dot" id="dot-2" style="position:relative;">
+              <span>2</span>
+              <span class="step-label">Grievance</span>
+            </div>
+          </div>
+          <div class="step-line" id="line-2"></div>
+          <div class="step-item">
+            <div class="step-dot" id="dot-3" style="position:relative;">
+              <span>3</span>
+              <span class="step-label">Review</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- MAIN FORM CARD -->
+        <div class="form-card" id="formCard">
+          <form id="grievanceForm" novalidate>
+
+            <!-- ===== STEP 1: Personal Info ===== -->
+            <div class="step-panel active" id="step1">
+              <h3 style="margin-bottom: 0.5rem;">Personal Information</h3>
+              <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem;">Your details help us route your grievance to the right department.</p>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="studentName">Full Name <span class="required">*</span></label>
+                  <input type="text" id="studentName" class="form-control" placeholder="e.g. Arjun Sharma" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="enrollment">Enrollment / Roll Number <span class="required">*</span></label>
+                  <input type="text" id="enrollment" class="form-control" placeholder="e.g. EN2024001" required />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="email">Email Address <span class="required">*</span></label>
+                  <input type="email" id="email" class="form-control" placeholder="you@college.edu" required />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="phone">Phone Number <span class="required">*</span></label>
+                  <input type="tel" id="phone" class="form-control" placeholder="10-digit mobile number" required />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="department">Department <span class="required">*</span></label>
+                  <select id="department" class="form-control" required>
+                    <option value="">— Select Department —</option>
+                    <option>Computer Science</option>
+                    <option>Electronics & Communication</option>
+                    <option>Mechanical Engineering</option>
+                    <option>Civil Engineering</option>
+                    <option>Electrical Engineering</option>
+                    <option>Information Technology</option>
+                    <option>Chemical Engineering</option>
+                    <option>MBA / Management</option>
+                    <option>MCA / Computer Applications</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="year">Year of Study <span class="required">*</span></label>
+                  <select id="year" class="form-control" required>
+                    <option value="">— Select Year —</option>
+                    <option>1st Year</option>
+                    <option>2nd Year</option>
+                    <option>3rd Year</option>
+                    <option>4th Year</option>
+                    <option>5th Year</option>
+                    <option>PG (Masters)</option>
+                    <option>PhD</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <div></div>
+                <button type="button" class="btn btn-primary" id="step1Next">
+                  Next: Grievance Details →
+                </button>
+              </div>
+            </div>
+
+            <!-- ===== STEP 2: Grievance Details ===== -->
+            <div class="step-panel" id="step2">
+              <h3 style="margin-bottom: 0.5rem;">Grievance Details</h3>
+              <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem;">Tell us what happened. The more specific you are, the faster we can help.</p>
+
+              <!-- Category -->
+              <div class="form-group">
+                <label class="form-label">Category <span class="required">*</span></label>
+                <div class="category-grid" id="categoryGrid">
+                  <div class="category-chip" data-value="academic" id="cat-academic">
+                    <span class="chip-icon">📚</span> Academic
+                  </div>
+                  <div class="category-chip" data-value="hostel" id="cat-hostel">
+                    <span class="chip-icon">🏠</span> Hostel
+                  </div>
+                  <div class="category-chip" data-value="fee" id="cat-fee">
+                    <span class="chip-icon">💰</span> Fee / Finance
+                  </div>
+                  <div class="category-chip" data-value="infrastructure" id="cat-infrastructure">
+                    <span class="chip-icon">🏗️</span> Infrastructure
+                  </div>
+                  <div class="category-chip" data-value="faculty" id="cat-faculty">
+                    <span class="chip-icon">👨‍🏫</span> Faculty
+                  </div>
+                  <div class="category-chip" data-value="sports" id="cat-sports">
+                    <span class="chip-icon">⚽</span> Sports
+                  </div>
+                  <div class="category-chip" data-value="library" id="cat-library">
+                    <span class="chip-icon">📖</span> Library
+                  </div>
+                  <div class="category-chip" data-value="other" id="cat-other">
+                    <span class="chip-icon">📝</span> Other
+                  </div>
+                </div>
+                <input type="hidden" id="category" required />
+              </div>
+
+              <!-- Priority -->
+              <div class="form-group">
+                <label class="form-label">Priority Level <span class="required">*</span></label>
+                <div class="priority-options" id="priorityOptions">
+                  <div class="priority-option" data-priority="low">🟢 Low</div>
+                  <div class="priority-option" data-priority="medium">🟡 Medium</div>
+                  <div class="priority-option" data-priority="high">🔴 High / Urgent</div>
+                </div>
+                <input type="hidden" id="priority" required />
+              </div>
+
+              <!-- Subject -->
+              <div class="form-group">
+                <label class="form-label" for="subject">Subject / Title <span class="required">*</span></label>
+                <input type="text" id="subject" class="form-control" placeholder="Brief title of your grievance (max 80 chars)" maxlength="80" required />
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
+                  <span id="subjectCount">0</span>/80 characters
+                </div>
+              </div>
+
+              <!-- Description -->
+              <div class="form-group">
+                <label class="form-label" for="description">Detailed Description <span class="required">*</span></label>
+                <textarea id="description" class="form-control" placeholder="Describe your grievance in detail. Mention dates, persons involved, and any previous attempts to resolve it..." rows="5" required></textarea>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="step2Back">← Back</button>
+                <button type="button" class="btn btn-primary" id="step2Next">Review & Submit →</button>
+              </div>
+            </div>
+
+            <!-- ===== STEP 3: Review ===== -->
+            <div class="step-panel" id="step3">
+              <h3 style="margin-bottom: 0.5rem;">Review Your Submission</h3>
+              <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem;">Please review all details before final submission.</p>
+
+              <div id="reviewContent"><!-- Filled by JS --></div>
+
+              <div class="alert alert-warning" style="margin-bottom: 0;">
+                <span>⚠️</span>
+                <span>Once submitted, you cannot edit this grievance. Make sure all information is correct. You can however follow up using your Grievance ID.</span>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="step3Back">← Edit Details</button>
+                <button type="button" class="btn btn-primary" id="submitBtn" onclick="handleSubmit()">
+                  <span id="submitBtnText">🚀 Submit Grievance</span>
+                </button>
+              </div>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- SUCCESS SCREEN -->
+        <div class="success-screen" id="successScreen" style="max-width: 600px; margin: 0 auto;">
+          <div class="success-icon-wrap">✅</div>
+          <h2 style="font-size: 2rem; margin-bottom: 0.75rem;">Grievance Submitted!</h2>
+          <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">Your grievance has been successfully registered. Please save your Grievance ID for future reference.</p>
+
+          <div class="grievance-id-box">
+            <div class="grievance-id-label">Your Grievance ID</div>
+            <div class="grievance-id-value" id="generatedId">—</div>
+            <button class="grievance-id-copy" id="copyId" onclick="copyGrievanceId()">📋 Copy ID</button>
+          </div>
+
+          <div class="alert alert-info" style="text-align: left; margin-bottom: 2rem;">
+            <span>ℹ️</span>
+            <div>
+              <strong>What happens next?</strong><br />
+              Our admin team will review your grievance within 2-3 working days. You can track the status anytime using your Grievance ID on the Track page.
+            </div>
+          </div>
+
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+              <a href="student-dashboard.html" class="btn btn-primary" id="success-track-btn">Go to Dashboard</a>
+              <a href="submit.html" class="btn btn-secondary" id="success-new-btn" onclick="resetForm()">Submit Another</a>
+            </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="footer-logo">🎓 Student Grievance System</div>
+      <p style="margin-top: 0.5rem;">Empowering students with a transparent grievance resolution platform.</p>
+    </footer>
+  </div>
+
+    <script src="app.js"></script>
+    <script>
+      let currentStep = 1;
+      let selectedCategory = '';
+      let selectedPriority = '';
+      
+      const student = getLoggedInStudent();
+      
+      document.addEventListener('DOMContentLoaded', () => {
+        if (student) {
+          document.getElementById('studentName').value = student.name;
+          document.getElementById('enrollment').value = student.enrollment;
+          document.getElementById('email').value = student.email;
+          // Make them readonly so they can't change identity
+          document.getElementById('studentName').readOnly = true;
+          document.getElementById('enrollment').readOnly = true;
+          document.getElementById('email').readOnly = true;
+        }
+      });
+
+    // -- Subject character counter --
+    document.getElementById('subject').addEventListener('input', function() {
+      document.getElementById('subjectCount').textContent = this.value.length;
+    });
+
+    // -- Category selection --
+    document.querySelectorAll('.category-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        selectedCategory = chip.dataset.value;
+        document.getElementById('category').value = selectedCategory;
+      });
+    });
+
+    // -- Priority selection --
+    document.querySelectorAll('.priority-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        document.querySelectorAll('.priority-option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        selectedPriority = opt.dataset.priority;
+        document.getElementById('priority').value = selectedPriority;
+      });
+    });
+
+    // -- Step navigation --
+    function goToStep(step) {
+      document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById(`step${step}`).classList.add('active');
+
+      // Update dots
+      for (let i = 1; i <= 3; i++) {
+        const dot = document.getElementById(`dot-${i}`);
+        dot.classList.remove('active', 'completed');
+        if (i < step) dot.classList.add('completed');
+        else if (i === step) dot.classList.add('active');
+      }
+
+      // Update lines
+      for (let i = 1; i <= 2; i++) {
+        const line = document.getElementById(`line-${i}`);
+        line.classList.toggle('active', i < step);
+      }
+
+      currentStep = step;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Step 1 validation
+    document.getElementById('step1Next').addEventListener('click', () => {
+      const fields = ['studentName', 'enrollment', 'email', 'phone', 'department', 'year'];
+      let valid = true;
+      fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el.value.trim()) {
+          el.style.borderColor = 'var(--rose)';
+          el.style.boxShadow = '0 0 0 3px rgba(244,63,94,0.15)';
+          valid = false;
+        } else {
+          el.style.borderColor = '';
+          el.style.boxShadow = '';
+        }
+      });
+
+      // Email validation
+      const email = document.getElementById('email');
+      if (email.value && !/^\S+@\S+\.\S+$/.test(email.value)) {
+        email.style.borderColor = 'var(--rose)';
+        valid = false;
+        showToast('error', 'Invalid Email', 'Please enter a valid email address.');
+        return;
+      }
+
+      // Phone validation
+      const phone = document.getElementById('phone');
+      if (phone.value && !/^\d{10}$/.test(phone.value.replace(/\s/g, ''))) {
+        phone.style.borderColor = 'var(--rose)';
+        valid = false;
+        showToast('error', 'Invalid Phone', 'Please enter a valid 10-digit mobile number.');
+        return;
+      }
+
+      if (!valid) { showToast('error', 'Required Fields', 'Please fill all required fields.'); return; }
+      goToStep(2);
+    });
+
+    document.getElementById('step2Back').addEventListener('click', () => goToStep(1));
+
+    // Step 2 validation
+    document.getElementById('step2Next').addEventListener('click', () => {
+      if (!selectedCategory) { showToast('error', 'Category Required', 'Please select a grievance category.'); return; }
+      if (!selectedPriority) { showToast('error', 'Priority Required', 'Please select a priority level.'); return; }
+      const subject = document.getElementById('subject').value.trim();
+      const description = document.getElementById('description').value.trim();
+      if (!subject) { showToast('error', 'Subject Required', 'Please enter a subject for your grievance.'); document.getElementById('subject').focus(); return; }
+      if (description.length < 20) { showToast('error', 'Description Too Short', 'Please describe your grievance in at least 20 characters.'); document.getElementById('description').focus(); return; }
+
+      buildReview();
+      goToStep(3);
+    });
+
+    document.getElementById('step3Back').addEventListener('click', () => goToStep(2));
+
+    function buildReview() {
+      const catLabels = { academic:'Academic', hostel:'Hostel', fee:'Fee / Finance', infrastructure:'Infrastructure', faculty:'Faculty', sports:'Sports', library:'Library', other:'Other' };
+      const html = `
+        <div class="review-section">
+          <div class="review-section-title">👤 Personal Information</div>
+          <div class="review-grid">
+            <div class="review-item"><label>Full Name</label><p>${document.getElementById('studentName').value}</p></div>
+            <div class="review-item"><label>Enrollment No.</label><p>${document.getElementById('enrollment').value}</p></div>
+            <div class="review-item"><label>Email</label><p>${document.getElementById('email').value}</p></div>
+            <div class="review-item"><label>Phone</label><p>${document.getElementById('phone').value}</p></div>
+            <div class="review-item"><label>Department</label><p>${document.getElementById('department').value}</p></div>
+            <div class="review-item"><label>Year</label><p>${document.getElementById('year').value}</p></div>
+          </div>
+        </div>
+        <div class="review-section">
+          <div class="review-section-title">📋 Grievance Details</div>
+          <div class="review-grid">
+            <div class="review-item"><label>Category</label><p>${categoryIcon(selectedCategory)} ${catLabels[selectedCategory]}</p></div>
+            <div class="review-item"><label>Priority</label><p>${selectedPriority.toUpperCase()}</p></div>
+          </div>
+          <div class="review-item" style="margin-top:0.75rem;"><label>Subject</label><p>${document.getElementById('subject').value}</p></div>
+          <div class="review-item" style="margin-top:0.75rem;"><label>Description</label><p style="white-space:pre-wrap; color:var(--text-secondary);">${document.getElementById('description').value}</p></div>
+        </div>
+      `;
+      document.getElementById('reviewContent').innerHTML = html;
+    }
+
+    // Submit
+    async function handleSubmit() {
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      document.getElementById('submitBtnText').innerHTML = '<span class="spinner" style="width:18px;height:18px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px;"></span> Submitting...';
+
+      const grievance = {
+        student_id: student ? student.id : null,
+        name: document.getElementById('studentName').value,
+        enrollment: document.getElementById('enrollment').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        department: document.getElementById('department').value,
+        year: document.getElementById('year').value,
+        category: selectedCategory,
+        priority: selectedPriority,
+        subject: document.getElementById('subject').value,
+        description: document.getElementById('description').value,
+      };
+
+      try {
+        const res = await fetch('http://localhost:8000/api/grievances', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(grievance)
+        });
+
+        const result = await res.json();
+
+        if (!res.ok || !result.id) {
+          showToast('error', 'Submission Failed', result.detail || 'Server error. Try again.');
+          btn.disabled = false;
+          document.getElementById('submitBtnText').textContent = '🚀 Submit Grievance';
+          return;
+        }
+
+        // SUCCESS — show screen with ID
+        document.getElementById('formCard').style.display = 'none';
+        document.getElementById('stepIndicator').style.display = 'none';
+        document.getElementById('generatedId').textContent = result.id;
+        document.getElementById('successScreen').style.display = 'block';
+        document.getElementById('successScreen').style.animation = 'fadeInUp 0.5s ease';
+        document.getElementById('successScreen').scrollIntoView({ behavior: 'smooth' });
+
+        showToast('success', 'Submitted!', 'Grievance ID: ' + result.id);
+
+      } catch (err) {
+        showToast('error', 'Connection Error', 'Backend server nahi mil raha. Restart karo.');
+        btn.disabled = false;
+        document.getElementById('submitBtnText').textContent = '🚀 Submit Grievance';
+      }
+    }
+
+    function copyGrievanceId() {
+      const id = document.getElementById('generatedId').textContent;
+      navigator.clipboard.writeText(id).then(() => {
+        showToast('success', 'Copied!', 'Grievance ID copied to clipboard.');
+        document.getElementById('copyId').textContent = '✅ Copied!';
+        setTimeout(() => { document.getElementById('copyId').textContent = '📋 Copy ID'; }, 2000);
+      });
+    }
+
+    function resetForm() {
+      location.reload();
+    }
+  </script>
+</body>
+</html>

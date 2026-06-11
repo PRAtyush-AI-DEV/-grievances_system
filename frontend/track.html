@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Track Grievance — Student Grievance System</title>
+  <meta name="description" content="Track your grievance status in real-time. Enter your unique Grievance ID to see all updates and the current resolution status." />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>" />
+  <style>
+    .search-card {
+      max-width: 640px;
+      margin: 0 auto 2.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-xl);
+      padding: 2.5rem;
+      backdrop-filter: blur(20px);
+      text-align: center;
+    }
+
+    .search-card h3 { margin-bottom: 0.5rem; }
+    .search-card p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem; }
+
+    .search-input-group {
+      display: flex;
+      gap: 0.75rem;
+      align-items: stretch;
+    }
+
+    .search-input-group .form-control { flex: 1; font-family: 'Outfit', monospace; font-weight: 600; font-size: 1rem; letter-spacing: 0.04em; text-transform: uppercase; }
+
+    /* Result card */
+    .result-card {
+      max-width: 760px;
+      margin: 0 auto;
+      display: none;
+      animation: fadeInUp 0.5s ease;
+    }
+    .result-card.active { display: block; }
+
+    .result-header {
+      background: linear-gradient(135deg, rgba(124,58,237,0.12), rgba(6,182,212,0.06));
+      border: 1px solid rgba(124,58,237,0.3);
+      border-radius: var(--radius-xl);
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .result-id { font-size: 1.4rem; font-weight: 900; font-family: 'Outfit', sans-serif; }
+    .result-id span {
+      background: var(--gradient-main);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .result-meta { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }
+
+    .result-status-col { text-align: right; }
+
+    .result-details {
+      background: var(--bg-card);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-xl);
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      backdrop-filter: blur(20px);
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 500px) { .detail-grid { grid-template-columns: 1fr; } }
+
+    .detail-item label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600; }
+    .detail-item p { font-size: 0.95rem; color: var(--text-primary); margin-top: 3px; font-weight: 500; }
+
+    .desc-box {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-glass);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      white-space: pre-wrap;
+    }
+
+    /* Timeline Track */
+    .track-status {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0;
+      position: relative;
+      padding: 1.5rem 0;
+      margin-bottom: 1.5rem;
+    }
+
+    .track-status::before {
+      content: '';
+      position: absolute;
+      top: 2.25rem;
+      left: 12%;
+      right: 12%;
+      height: 2px;
+      background: var(--border-glass);
+      z-index: 0;
+    }
+
+    .track-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      position: relative;
+      z-index: 1;
+    }
+
+    .track-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--bg-secondary);
+      border: 2px solid var(--border-glass);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      margin-bottom: 0.75rem;
+      transition: var(--transition);
+    }
+
+    .track-circle.done {
+      background: var(--emerald);
+      border-color: var(--emerald);
+      box-shadow: 0 0 20px rgba(16,185,129,0.4);
+    }
+
+    .track-circle.active-step {
+      background: var(--gradient-main);
+      border-color: transparent;
+      box-shadow: var(--shadow-glow-violet);
+      animation: pulse 2s infinite;
+    }
+
+    .track-circle.rejected-step {
+      background: var(--rose);
+      border-color: var(--rose);
+      box-shadow: 0 0 20px rgba(244,63,94,0.4);
+    }
+
+    .track-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .track-label.active-label { color: var(--violet-light); }
+    .track-label.done-label { color: var(--emerald); }
+    .track-label.rejected-label { color: var(--rose); }
+
+    /* Admin note */
+    .admin-note {
+      background: rgba(6,182,212,0.08);
+      border: 1px solid rgba(6,182,212,0.25);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+
+    /* Not found */
+    .not-found {
+      display: none;
+      max-width: 500px;
+      margin: 0 auto;
+      text-align: center;
+      padding: 3rem 2rem;
+    }
+    .not-found.active { display: block; animation: fadeInUp 0.4s ease; }
+    .not-found-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.6; }
+
+    /* Demo IDs hint */
+    .demo-hint {
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.2);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.5rem;
+      max-width: 640px;
+      margin: 0 auto 1.5rem;
+      font-size: 0.875rem;
+      color: var(--amber);
+    }
+    .demo-ids { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .demo-id-chip {
+      background: rgba(245,158,11,0.15);
+      border: 1px solid rgba(245,158,11,0.3);
+      border-radius: var(--radius-full);
+      padding: 0.2rem 0.7rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: 'Outfit', monospace;
+    }
+    .demo-id-chip:hover {
+      background: rgba(245,158,11,0.25);
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles-canvas"></canvas>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-logo">
+      <div class="nav-logo-icon">🎓</div>
+      <div class="nav-logo-text"><span>SGS</span> Portal</div>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="submit.html">Submit</a></li>
+      <li><a href="track.html" class="active">Track</a></li>
+      <li><a href="admin.html" class="nav-btn">Admin Panel</a></li>
+    </ul>
+    <div class="nav-hamburger" id="hamburger">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <div class="page-wrapper">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div class="page-header-badge">🔍 Track Status</div>
+      <h1>Track Your <span class="text-gradient">Grievance</span></h1>
+      <p>Enter your unique Grievance ID to see real-time status and admin updates.</p>
+    </div>
+
+    <section class="section" style="padding-top: 3rem;">
+      <div class="container">
+
+        <!-- SEARCH CARD -->
+        <div class="search-card">
+          <h3>🔍 Find Your Grievance</h3>
+          <p>Enter the Grievance ID you received when you submitted your complaint.</p>
+          <div class="search-input-group">
+            <input type="text" id="searchInput" class="form-control" placeholder="e.g. SGS2610001" maxlength="12" />
+            <button class="btn btn-primary" id="searchBtn" onclick="searchGrievance()">Search</button>
+          </div>
+          <p style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">
+            Don't have your ID? Check your email or contact the admin office.
+          </p>
+        </div>
+
+        <!-- NOT FOUND -->
+        <div class="not-found" id="notFound">
+          <div class="not-found-icon">🔎</div>
+          <h3>No Grievance Found</h3>
+          <p style="color: var(--text-secondary); margin: 0.5rem 0 1.5rem;">We couldn't find a grievance with ID "<strong id="searchedId"></strong>". Please check the ID and try again.</p>
+          <a href="submit.html" class="btn btn-primary">📝 Submit New Grievance</a>
+        </div>
+
+        <!-- RESULT -->
+        <div class="result-card" id="resultCard">
+          <!-- Filled by JS -->
+        </div>
+
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="footer-logo">🎓 Student Grievance System</div>
+      <p style="margin-top: 0.5rem;">Empowering students with a transparent grievance resolution platform.</p>
+    </footer>
+  </div>
+
+  <script src="app.js?v=2"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        // Check URL param
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('id')) {
+          document.getElementById('searchInput').value = params.get('id');
+          searchGrievance();
+        }
+      });
+
+      document.getElementById('searchInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') searchGrievance();
+      });
+
+      function getStatusNodes(status) {
+        const statuses = ['pending', 'review', 'resolved'];
+        const isRejected = status === 'rejected';
+        const nodes = [
+          { key: 'pending', icon: '📨', label: 'Submitted' },
+          { key: 'review',  icon: '🔍', label: 'Under Review' },
+          { key: isRejected ? 'rejected' : 'resolved', icon: isRejected ? '❌' : '✅', label: isRejected ? 'Rejected' : 'Resolved' },
+        ];
+
+        const currentIdx = isRejected ? 2 : statuses.indexOf(status);
+
+        return nodes.map((node, i) => {
+          let circleClass = '';
+          let labelClass = '';
+          if (isRejected && i === 2) { circleClass = status === 'rejected' ? 'rejected-step' : ''; labelClass = 'rejected-label'; }
+          else if (i < currentIdx) { circleClass = 'done'; labelClass = 'done-label'; }
+          else if (i === currentIdx) { circleClass = 'active-step'; labelClass = 'active-label'; }
+
+          return `
+            <div class="track-node">
+              <div class="track-circle ${circleClass}">${node.icon}</div>
+              <div class="track-label ${labelClass}">${node.label}</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      async function searchGrievance() {
+        const id = document.getElementById('searchInput').value.trim().toUpperCase();
+        if (!id) { showToast('warning', 'Enter Grievance ID', 'Please enter your Grievance ID.'); return; }
+
+        const g = await getGrievanceById(id);
+
+        document.getElementById('notFound').classList.remove('active');
+        document.getElementById('resultCard').classList.remove('active');
+
+        if (!g) {
+          document.getElementById('searchedId').textContent = id;
+          document.getElementById('notFound').classList.add('active');
+          return;
+        }
+
+        // Build result
+        const catLabels = { academic:'Academic', hostel:'Hostel', fee:'Fee / Finance', infrastructure:'Infrastructure', faculty:'Faculty', sports:'Sports', library:'Library', other:'Other' };
+
+        document.getElementById('resultCard').innerHTML = `
+          <div class="result-header">
+            <div>
+              <div class="result-id">Grievance ID: <span>${g.id}</span></div>
+              <div class="result-meta">📅 Submitted on ${formatDate(g.submittedAt)} &nbsp;•&nbsp; ${g.department} &nbsp;•&nbsp; ${g.year}</div>
+            </div>
+            <div class="result-status-col">
+              ${statusBadge(g.status)}
+              <div style="margin-top: 0.5rem;">${priorityBadge(g.priority)}</div>
+            </div>
+          </div>
+
+          <!-- STATUS TRACK -->
+          <div class="result-details">
+            <div style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--violet-light); margin-bottom: 1rem;">📍 Grievance Status Timeline</div>
+            <div class="track-status">
+              ${getStatusNodes(g.status)}
+            </div>
+
+            ${g.adminNote ? `
+              <div class="admin-note">
+                <span style="font-size:1.3rem;">💬</span>
+                <div>
+                  <div style="font-size:0.8rem; font-weight:700; color:var(--cyan); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.35rem;">Admin Note</div>
+                  <div style="font-size:0.9rem; color:var(--text-secondary);">${g.adminNote}</div>
+                  ${g.updatedAt ? `<div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.35rem;">Updated: ${formatDate(g.updatedAt)}</div>` : ''}
+                </div>
+              </div>
+            ` : `
+              <div style="text-align:center; padding:1rem; color:var(--text-muted); font-size:0.875rem;">
+                ⏳ No admin notes yet. Your grievance is in the queue and will be reviewed soon.
+              </div>
+            `}
+          </div>
+
+          <!-- DETAILS -->
+          <div class="result-details">
+            <div style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--violet-light); margin-bottom: 1.25rem;">📋 Grievance Information</div>
+
+            <div class="detail-grid">
+              <div class="detail-item"><label>Student Name</label><p>${g.name}</p></div>
+              <div class="detail-item"><label>Enrollment No.</label><p>${g.enrollment}</p></div>
+              <div class="detail-item"><label>Category</label><p>${categoryIcon(g.category)} ${catLabels[g.category] || g.category}</p></div>
+              <div class="detail-item"><label>Department</label><p>${g.department}</p></div>
+            </div>
+
+            <div class="detail-item" style="margin-bottom:1rem;">
+              <label>Subject</label>
+              <p style="font-size:1rem; font-weight:600; margin-top:4px;">${g.subject}</p>
+            </div>
+
+            <div class="detail-item">
+              <label>Detailed Description</label>
+              <div class="desc-box" style="margin-top:6px;">${g.description}</div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+            <a href="submit.html" class="btn btn-outline">📝 Submit Another Grievance</a>
+            <button class="btn btn-secondary" onclick="window.print()">🖨️ Print / Save</button>
+          </div>
+        `;
+
+        document.getElementById('resultCard').classList.add('active');
+        document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+  </script>
+</body>
+</html>
